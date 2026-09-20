@@ -65,6 +65,12 @@ jobs:
       - name: Configure Android SDK Path
         run: |
           echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass android -dname "CN=NagramXF CI, OU=CI, O=CI, L=CI, S=CI, C=US"
+          echo "KEYSTORE_PASS=android" >> local.properties
+          echo "ALIAS_NAME=release" >> local.properties
+          echo "ALIAS_PASS=android" >> local.properties
       - name: Modify Gradle JVM Args
         run: |
           MEMORY_KB=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
