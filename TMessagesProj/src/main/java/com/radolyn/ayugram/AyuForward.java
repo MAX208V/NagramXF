@@ -385,7 +385,10 @@ public class AyuForward {
         Long groupToken = groupState.groupToken;
 
         if (document != null) {
-            if (isInstantTransferEnabled() && hasUsableDocumentReference(document)) {
+            // 视频/GIF 不能走秒传：SendMessagesHelper 对 type=3 无条件创建 delayedMessage
+            // 会触发上传流程，本地文件不存在则失败。仅普通文档/音频走引用秒传。
+            if (isInstantTransferEnabled() && hasUsableDocumentReference(document)
+                    && !messageObject.isVideo() && !messageObject.isGif()) {
                 updateForwardingState(groupToken != null
                         ? (messageObject.isVideo() || messageObject.isGif()
                         ? LocaleController.getString(R.string.ForceForwardStatusMediaGroup)
@@ -562,8 +565,10 @@ public class AyuForward {
                 if (instantTransfer) {
                     TLRPC.Document document = messageObject.getDocument();
                     if (document != null) {
-                        // 秒传开启：文档直接引用原文件发送，无需本地副本。
-                        if (hasUsableDocumentReference(document)) {
+                        // 秒传开启：普通文档/音频引用原文件发送，无需本地副本。
+                        // 视频/GIF 仍需预下载（SendMessagesHelper type=3 强制走上传流程）。
+                        if (hasUsableDocumentReference(document)
+                                && !messageObject.isVideo() && !messageObject.isGif()) {
                             continue;
                         }
                     } else if (messageObject.isPhoto() && hasUsablePhotoReference(MessageObject.getPhoto(messageObject.messageOwner))) {
