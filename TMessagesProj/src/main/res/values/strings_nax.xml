@@ -393,6 +393,7 @@
     <string name="DeepLTranslateKey">DeepL API Key</string>
     <string name="DeepLTranslateKeyNotice">Configure DeepL API Key, leave blank to use built-in credentials.</string>    <string name="DirectForwardNotAllowed">Direct forwarding is not allowed.</string>
     <string name="ForceForwardFailed">Force forward failed.</string>
+    <string name="ForwardInstantTransferNotice">Send copies instantly by reusing the original file (no re-upload)</string>
     <string name="ForceForwardMediaTimedOut">Media download timed out.</string>
     <string name="ForceForwardMediaStalled">Media download stalled.</string>
     <string name="ForceForwardMediaDidNotStart">Media download did not start.</string>

@@ -157,6 +157,7 @@
     <string name="CancelForwarding">取消轉傳</string>
     <string name="DirectForwardNotAllowed">不允許直接轉傳。</string>
     <string name="ForceForwardFailed">強制轉傳失敗。</string>
+    <string name="ForwardInstantTransferNotice">複製檔案時秒傳（直接引用原檔案，無需重新上傳）</string>
     <string name="ForceForwardMediaStalled">媒體下載已停滯。</string>
     <string name="ForceForwardStatusPreparingMedia">正在準備媒體</string>
     <string name="ForceForwardStatusSentCount">%1$d / %2$d</string>

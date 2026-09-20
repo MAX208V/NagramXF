@@ -377,6 +377,7 @@
     <string name="DeepLTranslateKeyNotice">Налаштуйте ключ DeepL API або залиште поле порожнім, щоб використовувати вбудовані облікові дані.</string>
     <string name="DirectForwardNotAllowed">Пряме пересилання заборонено.</string>
     <string name="ForceForwardFailed">Не вдалося виконати примусове пересилання.</string>
+    <string name="ForwardInstantTransferNotice">Миттєва відправка копій (використовувати оригінальний файл без повторного завантаження)</string>
     <string name="ForceForwardMediaTimedOut">Час очікування завантаження медіа вичерпано.</string>
     <string name="ForceForwardMediaStalled">Завантаження медіа зупинилося.</string>
     <string name="ForceForwardMediaDidNotStart">Завантаження медіа не почалося.</string>

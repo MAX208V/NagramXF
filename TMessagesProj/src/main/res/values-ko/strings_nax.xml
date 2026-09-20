@@ -373,6 +373,7 @@
     <string name="DeepLTranslateKey">DeepL API 키</string>
     <string name="DeepLTranslateKeyNotice">DeepL API 키를 구성하세요. 비워 두면 내장 자격 증명을 사용합니다.</string>    <string name="DirectForwardNotAllowed">직접 전달할 수 없습니다.</string>
     <string name="ForceForwardFailed">강제 전달에 실패했습니다.</string>
+    <string name="ForwardInstantTransferNotice">파일 복사 시 즉시 전송 (원본 파일 재사용, 재업로드 불필요)</string>
     <string name="ForceForwardMediaTimedOut">미디어 다운로드 시간이 초과되었습니다.</string>
     <string name="ForceForwardMediaStalled">미디어 다운로드가 중단되었습니다.</string>
     <string name="ForceForwardMediaDidNotStart">미디어 다운로드가 시작되지 않았습니다.</string>

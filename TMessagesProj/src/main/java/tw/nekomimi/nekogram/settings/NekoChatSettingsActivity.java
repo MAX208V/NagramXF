@@ -174,6 +174,7 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
     ArrayList<ConfigCellCheckBox> premiumElementsRows = ((ConfigCellTextCheck2) premiumElementsToggleRow).getCheckBox();
     private final AbstractConfigCell unreadBadgeOnBackButton = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.unreadBadgeOnBackButton));
     private final AbstractConfigCell sendCommentAfterForwardRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.sendCommentAfterForward));
+    private final AbstractConfigCell forwardInstantTransferRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getForwardInstantTransfer(), getString(R.string.ForwardInstantTransferNotice)));
     private final AbstractConfigCell useChatAttachMediaMenuRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.useChatAttachMediaMenu, getString(R.string.UseChatAttachEnterMenuNotice)));
     private final AbstractConfigCell iOSMessageInputFieldRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.iOSMessageInputField, getString(R.string.iOSMessageInputFieldNotice)));
     private final AbstractConfigCell fixLinkPreviewRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getFixLinkPreview(), "x.com -> fixupx.com"));
