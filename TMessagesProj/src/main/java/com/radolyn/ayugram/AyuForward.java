@@ -31,8 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import xyz.nextalone.nagram.NaConfig;
-
 
 public class AyuForward {
 
@@ -383,41 +381,9 @@ public class AyuForward {
         boolean waitForMessage = groupState.groupToken == null || groupState.finalItem;
         boolean waitForUpload = groupState.groupToken == null;
         Long groupToken = groupState.groupToken;
+        File file = resolveExistingFile(messageObject);
 
         if (document != null) {
-            // 视频/GIF 不能走秒传：SendMessagesHelper 对 type=3 无条件创建 delayedMessage
-            // 会触发上传流程，本地文件不存在则失败。仅普通文档/音频走引用秒传。
-            if (isInstantTransferEnabled() && hasUsableDocumentReference(document)
-                    && !messageObject.isVideo() && !messageObject.isGif()) {
-                updateForwardingState(groupToken != null
-                        ? (messageObject.isVideo() || messageObject.isGif()
-                        ? LocaleController.getString(R.string.ForceForwardStatusMediaGroup)
-                        : LocaleController.getString(R.string.ForceForwardStatusDocumentGroup))
-                        : (messageObject.isVideo() || messageObject.isGif()
-                        ? LocaleController.getString(R.string.ForceForwardStatusMediaCopy)
-                        : LocaleController.getString(R.string.ForceForwardStatusDocumentCopy)));
-
-                SendMessagesHelper.SendMessageParams instantParams = buildInstantDocumentParams(
-                        messageObject,
-                        document,
-                        hideCaption ? null : sourceText,
-                        hideCaption ? null : copyEntitiesOrNull(messageObject),
-                        targetDialogId,
-                        notify,
-                        scheduleDate,
-                        groupToken,
-                        groupState.finalItem,
-                        hasMediaSpoilers,
-                        invertMedia
-                );
-                if (instantParams != null) {
-                    // 引用原文件直接发送（秒传），无需下载/上传；引用失败由
-                    // SendMessagesHelper 自动刷新 file_reference 或回退到本地上传。
-                    return dispatchParamsSync(instantParams, null, targetDialogId, payStars, waitForMessage, false);
-                }
-            }
-
-            File file = resolveExistingFile(messageObject);
             if (file == null) {
                 return false;
             }
@@ -448,36 +414,6 @@ public class AyuForward {
         }
 
         if (photo != null) {
-            if (isInstantTransferEnabled() && hasUsablePhotoReference(photo)) {
-                updateForwardingState(groupState.groupToken != null
-                        ? LocaleController.getString(R.string.ForceForwardStatusMediaGroup)
-                        : LocaleController.getString(R.string.ForceForwardStatusPhotoCopy));
-
-                String caption = TextUtils.isEmpty(photo.caption) ? sourceText : photo.caption;
-                if (hideCaption) {
-                    caption = null;
-                }
-                SendMessagesHelper.SendMessageParams instantParams = buildInstantPhotoParams(
-                        messageObject,
-                        photo,
-                        caption,
-                        hideCaption ? null : copyEntitiesOrNull(messageObject),
-                        targetDialogId,
-                        notify,
-                        scheduleDate,
-                        groupToken,
-                        groupState.finalItem,
-                        hasMediaSpoilers,
-                        invertMedia
-                );
-                if (instantParams != null) {
-                    // 照片引用跨会话通常被服务器拒绝，失败时 SendMessagesHelper 会自动
-                    // 回退到下载后重新上传（需要本地有原图，由 collectPendingDownloads 保证）。
-                    return dispatchParamsSync(instantParams, null, targetDialogId, payStars, waitForMessage, false);
-                }
-            }
-
-            File file = resolveExistingFile(messageObject);
             if (file == null) {
                 return false;
             }
@@ -555,27 +491,12 @@ public class AyuForward {
     }
 
     private ArrayList<MessageObject> collectPendingDownloads(ArrayList<MessageObject> messages, boolean fullAyuForwardsNeeded) {
-        boolean instantTransfer = isInstantTransferEnabled();
         ArrayList<MessageObject> result = new ArrayList<>();
         for (int i = 0; i < messages.size(); i++) {
             MessageObject messageObject = messages.get(i);
             if (messageObject != null
                     && (fullAyuForwardsNeeded || AyuMessageUtils.isUnforwardable(messageObject))
                     && AyuMessageUtils.isMediaDownloadable(messageObject, false)) {
-                if (instantTransfer) {
-                    TLRPC.Document document = messageObject.getDocument();
-                    if (document != null) {
-                        // 秒传开启：普通文档/音频引用原文件发送，无需本地副本。
-                        // 视频/GIF 仍需预下载（SendMessagesHelper type=3 强制走上传流程）。
-                        if (hasUsableDocumentReference(document)
-                                && !messageObject.isVideo() && !messageObject.isGif()) {
-                            continue;
-                        }
-                    } else if (messageObject.isPhoto() && hasUsablePhotoReference(MessageObject.getPhoto(messageObject.messageOwner))) {
-                        // 照片尝试引用发送，但失败会自动回退到本地上传，
-                        // 因此仍需确保本地有原图可回退。
-                    }
-                }
                 result.add(messageObject);
             }
         }
@@ -794,144 +715,6 @@ public class AyuForward {
 
     private HashMap<String, String> buildGroupedParams(Long groupToken, boolean finalItem) {
         return groupToken != null ? mapper.createGroupedParams(groupToken, finalItem) : null;
-    }
-
-    private static boolean isInstantTransferEnabled() {
-        try {
-            return NaConfig.INSTANCE.getForwardInstantTransfer().Bool();
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    private static boolean hasUsableFileReference(byte[] fileReference) {
-        return fileReference != null && fileReference.length > 0;
-    }
-
-    private boolean hasUsableDocumentReference(TLRPC.Document document) {
-        return document != null && document.access_hash != 0 && hasUsableFileReference(document.file_reference);
-    }
-
-    private boolean hasUsablePhotoReference(TLRPC.Photo photo) {
-        return photo != null && photo.access_hash != 0 && hasUsableFileReference(photo.file_reference);
-    }
-
-    /**
-     * 秒传用的文档副本：保留原始 id / access_hash / file_reference / dc_id，
-     * 这样 SendMessagesHelper 会构造 inputMediaDocument 直接引用原文件发送，
-     * 服务器复用已存储的媒体，无需下载与重新上传。
-     */
-    private TLRPC.TL_document mapDocumentInstant(TLRPC.Document source) {
-        if (source == null) {
-            return null;
-        }
-        TLRPC.TL_document mapped = new TLRPC.TL_document();
-        mapped.flags = source.flags;
-        mapped.id = source.id;
-        mapped.access_hash = source.access_hash;
-        mapped.file_reference = source.file_reference != null ? source.file_reference : new byte[0];
-        mapped.dc_id = source.dc_id;
-        mapped.user_id = source.user_id;
-        mapped.version = source.version;
-        mapped.mime_type = source.mime_type;
-        mapped.file_name = source.file_name;
-        mapped.file_name_fixed = source.file_name_fixed;
-        mapped.date = source.date;
-        mapped.size = source.size;
-        mapped.thumbs = source.thumbs;
-        mapped.video_thumbs = source.video_thumbs;
-        mapped.localThumbPath = source.localThumbPath;
-        mapped.attributes = source.attributes;
-        mapped.key = null;
-        mapped.iv = null;
-        return mapped;
-    }
-
-    private SendMessagesHelper.SendMessageParams buildInstantDocumentParams(MessageObject messageObject, TLRPC.Document sourceDocument, String caption, ArrayList<TLRPC.MessageEntity> entities, long targetDialogId, boolean notify, int scheduleDate, Long groupToken, boolean finalItem, boolean hasMediaSpoilers, boolean invertMedia) {
-        TLRPC.TL_document document = mapDocumentInstant(sourceDocument);
-        if (document == null) {
-            return null;
-        }
-        // 本地已有文件则带上（引用失败时 SendMessagesHelper 可自动回退到本地上传）
-        String localPath = resolvePath(messageObject);
-        SendMessagesHelper.SendMessageParams sendParams = SendMessagesHelper.SendMessageParams.of(
-                document,
-                null,
-                localPath,
-                targetDialogId,
-                replyToTopMessage,
-                replyToTopMessage,
-                TextUtils.isEmpty(caption) ? null : caption,
-                entities,
-                null,
-                buildGroupedParams(groupToken, finalItem),
-                notify,
-                scheduleDate,
-                0,
-                0,
-                messageObject,
-                null,
-                false,
-                hasMediaSpoilers
-        );
-        sendParams.invert_media = invertMedia;
-        return sendParams;
-    }
-
-    /**
-     * 秒传用的照片副本：保留原始 id / access_hash / file_reference 与 sizes，
-     * 构造 inputMediaPhoto 尝试引用发送；跨会话引用通常被服务器拒绝，
-     * 失败时由 SendMessagesHelper 自动回退到下载后重新上传。
-     */
-    private TLRPC.TL_photo mapPhotoInstant(TLRPC.Photo source) {
-        if (source == null) {
-            return null;
-        }
-        TLRPC.TL_photo mapped = new TLRPC.TL_photo();
-        mapped.flags = source.flags;
-        mapped.has_stickers = source.has_stickers;
-        mapped.id = source.id;
-        mapped.access_hash = source.access_hash;
-        mapped.file_reference = source.file_reference != null ? source.file_reference : new byte[0];
-        mapped.date = source.date;
-        mapped.geo = source.geo;
-        mapped.caption = source.caption;
-        mapped.dc_id = source.dc_id;
-        mapped.sizes = new ArrayList<>(source.sizes);
-        mapped.video_sizes = source.video_sizes;
-        return mapped;
-    }
-
-    private SendMessagesHelper.SendMessageParams buildInstantPhotoParams(MessageObject messageObject, TLRPC.Photo sourcePhoto, String caption, ArrayList<TLRPC.MessageEntity> entities, long targetDialogId, boolean notify, int scheduleDate, Long groupToken, boolean finalItem, boolean hasMediaSpoilers, boolean invertMedia) {
-        TLRPC.TL_photo photo = mapPhotoInstant(sourcePhoto);
-        if (photo == null || photo.sizes == null || photo.sizes.isEmpty()) {
-            return null;
-        }
-        HashMap<String, String> params = buildGroupedParams(groupToken, finalItem);
-        if (params != null) {
-            params.put("originalPath", resolvePhotoUploadTrackingPath(photo));
-        }
-        String localPath = resolvePath(messageObject);
-        SendMessagesHelper.SendMessageParams sendParams = SendMessagesHelper.SendMessageParams.of(
-                photo,
-                localPath,
-                targetDialogId,
-                replyToTopMessage,
-                replyToTopMessage,
-                TextUtils.isEmpty(caption) ? null : caption,
-                entities,
-                null,
-                params,
-                notify,
-                scheduleDate,
-                0,
-                0,
-                messageObject,
-                false,
-                hasMediaSpoilers
-        );
-        sendParams.invert_media = invertMedia;
-        return sendParams;
     }
 
     private SendMessagesHelper.SendMessageParams buildOriginalPhotoParams(TLRPC.Photo sourcePhoto, File file, String caption, ArrayList<TLRPC.MessageEntity> entities, long targetDialogId, boolean notify, int scheduleDate, Long groupToken, boolean finalItem, boolean hasMediaSpoilers, boolean invertMedia) {

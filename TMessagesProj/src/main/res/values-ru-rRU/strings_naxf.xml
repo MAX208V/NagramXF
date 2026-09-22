@@ -165,7 +165,6 @@
     <string name="CancelForwarding">Отменить пересылку</string>
     <string name="DirectForwardNotAllowed">Прямая пересылка запрещена.</string>
     <string name="ForceForwardFailed">Не удалось выполнить принудительную пересылку.</string>
-    <string name="ForwardInstantTransferNotice">Мгновенная отправка копий (использовать исходный файл без повторной загрузки)</string>
     <string name="ForceForwardMediaStalled">Загрузка медиа остановилась.</string>
     <string name="ForceForwardStatusPreparingMedia">Подготовка медиа</string>
     <string name="ForceForwardStatusChunkCount">фрагмент %1$d из %2$d</string>

@@ -155,12 +155,6 @@ object NaConfig {
             ConfigItem.configTypeBool,
             false
         )
-    val forwardInstantTransfer =
-        addConfig(
-            "ForwardInstantTransfer",
-            ConfigItem.configTypeBool,
-            true
-        )
     val showRepeatAsCopy =
         addConfig(
             "RepeatAsCopy",

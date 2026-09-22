@@ -364,7 +364,6 @@
     <string name="CancelForwarding">取消转发</string>
     <string name="DirectForwardNotAllowed">不允许直接转发。</string>
     <string name="ForceForwardFailed">强制转发失败。</string>
-    <string name="ForwardInstantTransferNotice">复制文件时秒传（直接引用原文件，无需重新上传）</string>
     <string name="ForceForwardMediaTimedOut">媒体下载超时。</string>
     <string name="ForceForwardMediaStalled">媒体下载已停滞。</string>
     <string name="ForceForwardMediaDidNotStart">媒体下载未开始。</string>
